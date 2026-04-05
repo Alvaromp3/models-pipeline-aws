@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NovaApiService } from '../../core/api/nova-api.service';
@@ -111,9 +112,8 @@ export class PredictionsPageComponent implements OnInit {
         this.initValueMaps();
         this.loadingFeatures = false;
       },
-      error: () => {
-        this.featuresError =
-          'Could not load model input schema (check ML service :8000 and API proxy).';
+      error: (err: unknown) => {
+        this.featuresError = this.schemaLoadErrorMessage(err);
         this.revenueFeatures = [];
         this.stockoutFeatures = [];
         this.shareableSchema = false;
@@ -158,6 +158,28 @@ export class PredictionsPageComponent implements OnInit {
 
   private valueSourceStockout(): Record<string, string> {
     return this.shareableSchema ? this.valuesShared : this.valuesStockout;
+  }
+
+  /** Mensaje cuando falla GET /api/predictions/model-features (proxy a ML /metadata/features). */
+  private schemaLoadErrorMessage(err: unknown): string {
+    const base =
+      'Could not load model input schema (Nest → ML /metadata/features). ';
+    if (err instanceof HttpErrorResponse) {
+      if (err.status === 401 || err.status === 403) {
+        return base + 'Session expired or forbidden — sign in again.';
+      }
+      if (err.status === 0) {
+        return base + 'Network error — is the API running and is the dev proxy OK?';
+      }
+      if (err.status >= 500) {
+        return (
+          base +
+          `Server error (HTTP ${err.status}). The first schema request downloads full joblibs from S3 and can take a long time — restart the API after the backend change (120s ML timeout) and click Refresh.`
+        );
+      }
+      return base + `HTTP ${err.status}.`;
+    }
+    return base + 'Check ML :8000, ML_SERVICE_URL in the API, and credentials.';
   }
 
   refreshMlHealth(): void {

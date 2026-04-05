@@ -46,12 +46,15 @@ export class PredictionsService {
     return res.data;
   }
 
-  /** Columnas de entrada reportadas por cada joblib (`feature_names_in_`). */
+  /**
+   * Columnas de entrada (`feature_names_in_`). La primera llamada al ML puede tardar mucho:
+   * dispara la carga completa de los `.joblib` desde S3; `/health` solo hace head_object.
+   */
   async modelFeatures(): Promise<{ revenue_features: string[]; stockout_features: string[] }> {
     const url = `${this.mlBase()}/metadata/features`;
     const res = await firstValueFrom(
       this.http.get<{ revenue_features: string[]; stockout_features: string[] }>(url, {
-        timeout: 10_000,
+        timeout: 120_000,
       }),
     );
     return res.data;
