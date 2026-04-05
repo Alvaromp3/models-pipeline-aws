@@ -1,0 +1,112 @@
+.retail-combo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.retail-combo__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--nr-muted);
+}
+
+.retail-combo__hint {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--nr-text-secondary);
+}
+
+.retail-combo__wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.retail-combo__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--nr-border);
+  border-radius: var(--nr-radius-sm) 0 0 var(--nr-radius-sm);
+  font-size: 0.88rem;
+  font-family: var(--nr-font-body);
+  color: var(--nr-text);
+  background: var(--nr-bg-elevated);
+
+  &:focus {
+    outline: none;
+    border-color: rgb(0 71 171 / 45%);
+    box-shadow: 0 0 0 3px rgb(0 71 171 / 12%);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.retail-combo__chev {
+  flex-shrink: 0;
+  width: 2.35rem;
+  border: 1px solid var(--nr-border);
+  border-left: none;
+  border-radius: 0 var(--nr-radius-sm) var(--nr-radius-sm) 0;
+  background: linear-gradient(180deg, #f8fafc, #f1f5f9);
+  color: var(--nr-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #e2e8f0;
+    color: var(--nr-text);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.retail-combo__panel {
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: 0.35rem 0;
+  list-style: none;
+  max-height: min(240px, 42vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  background: var(--nr-bg-elevated);
+  border: 1px solid var(--nr-border);
+  border-radius: var(--nr-radius-sm);
+  box-shadow:
+    var(--nr-shadow-lg),
+    0 12px 40px rgb(15 23 42 / 12%);
+}
+
+.retail-combo__opt {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.84rem;
+  cursor: pointer;
+  color: var(--nr-text);
+
+  &:hover,
+  &:focus {
+    background: rgb(0 71 171 / 8%);
+  }
+}
+
+.retail-combo__empty {
+  padding: 0.65rem 0.75rem;
+  font-size: 0.78rem;
+  color: var(--nr-muted);
+  font-style: italic;
+}

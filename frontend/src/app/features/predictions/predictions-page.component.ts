@@ -2,39 +2,55 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NovaApiService } from '../../core/api/nova-api.service';
 import { JsonHighlightPipe } from '../../shared/json-highlight.pipe';
+import { PredictFeatureFieldComponent } from './predict-feature-field.component';
+import { PredictionFieldHelperComponent } from './prediction-field-helper.component';
+import { PredictionFieldHelperContext } from './prediction-field-helper.context';
 import { ML_OUTPUT_DOCS, ML_TARGET_DOCS } from './ml-target-docs';
 import {
-  TRAINING_COLUMN_DOCS,
-  defaultSampleFeatureRow,
-} from './training-data-features';
+  buildStrictModelPayload,
+  normalizeMetadataPayload,
+  sameFeatureSchema,
+  seedValuesForFeatures,
+} from './prediction-dynamic-form';
+import { TRAINING_COLUMN_DOCS } from './training-data-features';
 
 type PredictionsTab = 'console' | 'dataset' | 'targets';
 
 @Component({
   selector: 'app-predictions-page',
   standalone: true,
-  imports: [FormsModule, JsonHighlightPipe],
+  imports: [
+    FormsModule,
+    JsonHighlightPipe,
+    PredictFeatureFieldComponent,
+    PredictionFieldHelperComponent,
+  ],
   templateUrl: './predictions-page.component.html',
   styleUrl: './predictions-page.component.scss',
+  providers: [PredictionFieldHelperContext],
 })
 export class PredictionsPageComponent implements OnInit {
   private readonly api = inject(NovaApiService);
+  private readonly fieldHelper = inject(PredictionFieldHelperContext);
 
   readonly trainingColumns = TRAINING_COLUMN_DOCS;
   readonly targetDocs = ML_TARGET_DOCS;
   readonly outputDocs = ML_OUTPUT_DOCS;
-
   activeTab: PredictionsTab = 'console';
 
-  region = 'EMEA';
-  skuRevenue = 'SKU-10042';
-  skuStock = 'SKU-10042';
+  /** Columns from joblib `feature_names_in_` (targets stripped defensively). */
+  revenueFeatures: string[] = [];
+  stockoutFeatures: string[] = [];
+  shareableSchema = false;
 
-  featureJsonText = '';
-  featureJsonError: string | null = null;
+  valuesShared: Record<string, string> = {};
+  valuesRevenue: Record<string, string> = {};
+  valuesStockout: Record<string, string> = {};
 
   mlHealth: Record<string, unknown> | null = null;
   mlHealthError: string | null = null;
+  loadingFeatures = false;
+  featuresError: string | null = null;
 
   loadingRev = false;
   loadingStock = false;
@@ -44,18 +60,104 @@ export class PredictionsPageComponent implements OnInit {
   resultRev: Record<string, unknown> | null = null;
   resultStock: Record<string, unknown> | null = null;
 
+  explainRev: string | null = null;
+  explainStock: string | null = null;
+  explainRevNote: string | null = null;
+  explainStockNote: string | null = null;
+
   ngOnInit(): void {
-    this.resetFeatureJson();
+    this.fieldHelper.registerPickHandler((ref, value) => {
+      const map =
+        ref.scope === 'shared'
+          ? this.valuesShared
+          : ref.scope === 'rev'
+            ? this.valuesRevenue
+            : this.valuesStockout;
+      map[ref.feature] = value;
+    });
     this.refreshMlHealth();
+    this.refreshModelFeatures();
   }
 
   setTab(tab: PredictionsTab): void {
     this.activeTab = tab;
   }
 
-  resetFeatureJson(): void {
-    this.featureJsonText = JSON.stringify(defaultSampleFeatureRow(), null, 2);
-    this.featureJsonError = null;
+  initValueMaps(): void {
+    if (this.shareableSchema) {
+      this.valuesShared = seedValuesForFeatures(this.revenueFeatures);
+      this.valuesRevenue = {};
+      this.valuesStockout = {};
+    } else {
+      this.valuesShared = {};
+      this.valuesRevenue = seedValuesForFeatures(this.revenueFeatures);
+      this.valuesStockout = seedValuesForFeatures(this.stockoutFeatures);
+    }
+  }
+
+  resetScenario(): void {
+    this.initValueMaps();
+  }
+
+  refreshModelFeatures(): void {
+    this.loadingFeatures = true;
+    this.featuresError = null;
+    this.api.getModelFeatures().subscribe({
+      next: (raw) => {
+        const m = normalizeMetadataPayload(raw);
+        this.revenueFeatures = m.revenue_features;
+        this.stockoutFeatures = m.stockout_features;
+        this.shareableSchema = sameFeatureSchema(this.revenueFeatures, this.stockoutFeatures);
+        this.initValueMaps();
+        this.loadingFeatures = false;
+      },
+      error: () => {
+        this.featuresError =
+          'Could not load model input schema (check ML service :8000 and API proxy).';
+        this.revenueFeatures = [];
+        this.stockoutFeatures = [];
+        this.shareableSchema = false;
+        this.valuesShared = {};
+        this.valuesRevenue = {};
+        this.valuesStockout = {};
+        this.loadingFeatures = false;
+      },
+    });
+  }
+
+  refreshAll(): void {
+    this.refreshMlHealth();
+    this.refreshModelFeatures();
+  }
+
+  payloadRevenue(): Record<string, unknown> {
+    const src = this.valueSourceRevenue();
+    return buildStrictModelPayload(this.revenueFeatures, src);
+  }
+
+  payloadStockout(): Record<string, unknown> {
+    const src = this.valueSourceStockout();
+    return buildStrictModelPayload(this.stockoutFeatures, src);
+  }
+
+  payloadJsonRevenue(): string {
+    return JSON.stringify(this.payloadRevenue(), null, 2);
+  }
+
+  payloadJsonStockout(): string {
+    return JSON.stringify(this.payloadStockout(), null, 2);
+  }
+
+  payloadJsonShared(): string {
+    return JSON.stringify(this.payloadRevenue(), null, 2);
+  }
+
+  private valueSourceRevenue(): Record<string, string> {
+    return this.shareableSchema ? this.valuesShared : this.valuesRevenue;
+  }
+
+  private valueSourceStockout(): Record<string, string> {
+    return this.shareableSchema ? this.valuesShared : this.valuesStockout;
   }
 
   refreshMlHealth(): void {
@@ -91,66 +193,49 @@ export class PredictionsPageComponent implements OnInit {
     return `type-badge ${variant}`;
   }
 
-  private parseFeaturePayload(): Record<string, unknown> | null {
-    try {
-      const o = JSON.parse(this.featureJsonText) as unknown;
-      if (o === null || typeof o !== 'object' || Array.isArray(o)) {
-        this.featureJsonError = 'JSON root must be a single object (feature row), not an array.';
-        return null;
-      }
-      this.featureJsonError = null;
-      return o as Record<string, unknown>;
-    } catch {
-      this.featureJsonError = 'Invalid JSON — check quotes and trailing commas.';
-      return null;
-    }
-  }
-
   runRevenue(): void {
-    const base = this.parseFeaturePayload();
-    if (!base) return;
+    const body = this.payloadRevenue();
     this.loadingRev = true;
     this.errorRev = null;
     this.resultRev = null;
-    const body = {
-      ...base,
-      region: this.region,
-      sku_id: this.skuRevenue,
-      sku: this.skuRevenue,
-    };
+    this.explainRev = null;
+    this.explainRevNote = null;
     this.api.predictRevenue(body).subscribe({
       next: (data) => {
-        this.resultRev = data;
+        const split = this.splitMlAndNarrative(data);
+        this.resultRev = split.ml;
+        this.explainRev = split.narrative;
+        this.explainRevNote = split.narrativeError;
         this.loadingRev = false;
         this.refreshMlHealth();
       },
       error: () => {
         this.errorRev =
-          'Model call failed — verify ML :8000, joblib on disk/S3, and Nest API.';
+          'Revenue model call failed — verify ML :8000, joblib on disk/S3, and Nest API.';
         this.loadingRev = false;
       },
     });
   }
 
   runStockout(): void {
-    const base = this.parseFeaturePayload();
-    if (!base) return;
+    const body = this.payloadStockout();
     this.loadingStock = true;
     this.errorStock = null;
     this.resultStock = null;
-    const body = {
-      ...base,
-      sku_id: this.skuStock,
-      sku: this.skuStock,
-    };
+    this.explainStock = null;
+    this.explainStockNote = null;
     this.api.predictStockout(body).subscribe({
       next: (data) => {
-        this.resultStock = data;
+        const split = this.splitMlAndNarrative(data);
+        this.resultStock = split.ml;
+        this.explainStock = split.narrative;
+        this.explainStockNote = split.narrativeError;
         this.loadingStock = false;
         this.refreshMlHealth();
       },
       error: () => {
-        this.errorStock = 'Stock-out model call failed — check ML service and API.';
+        this.errorStock =
+          'Stock-out model call failed — check ML service and API.';
         this.loadingStock = false;
       },
     });
@@ -173,10 +258,10 @@ export class PredictionsPageComponent implements OnInit {
     else if (bucketOk === false) parts.push('S3 bucket unreachable (IAM / region)');
     const r = snap['revenueObjectHeadOk'];
     const s = snap['stockoutObjectHeadOk'];
-    if (r === true) parts.push('Revenue object OK');
-    else if (r === false) parts.push('Missing revenue key in bucket');
-    if (s === true) parts.push('Stock-out object OK');
-    else if (s === false) parts.push('Missing stock-out key in bucket');
+    if (r === true) parts.push('Revenue model object OK');
+    else if (r === false) parts.push('Missing revenue model key in bucket');
+    if (s === true) parts.push('Stock-out model object OK');
+    else if (s === false) parts.push('Missing stock-out model key in bucket');
     const m = this.mlHealth?.['models'] as Record<string, unknown> | undefined;
     const order = m?.['modelOrder'];
     if (order) parts.push(`Load order: ${order}`);
@@ -192,5 +277,51 @@ export class PredictionsPageComponent implements OnInit {
     if (rs) bits.push(`Revenue ← ${rs}`);
     if (ss) bits.push(`Stock-out ← ${ss}`);
     return bits.join(' · ');
+  }
+
+  s3StatusItems(): string[] {
+    const line = this.s3ModelsLine();
+    return line ? line.split(' · ').map((s) => s.trim()).filter(Boolean) : [];
+  }
+
+  schemaSummaryLine(): string {
+    const r = this.revenueFeatures.length;
+    const s = this.stockoutFeatures.length;
+    if (r === 0 && s === 0) {
+      return 'No feature list reported (stubs or models without feature_names_in_).';
+    }
+    if (this.shareableSchema) {
+      return `Shared input schema · ${r} feature(s) for both models.`;
+    }
+    return `Revenue: ${r} feature(s) · Stock-out: ${s} feature(s) (different schemas).`;
+  }
+
+  revenueScenarioCopy(): string {
+    return this.shareableSchema
+      ? 'Forecasts expected retail revenue from the shared feature row — pricing, promotion, inventory, and demand context as defined by your revenue joblib. You never supply the historical revenue target.'
+      : 'Forecasts expected retail revenue from the revenue model input block only (schema may differ from stock-out). You never supply the historical revenue target.';
+  }
+
+  stockScenarioCopy(): string {
+    return this.shareableSchema
+      ? 'Scores inventory shortage risk from the same retail feature row as revenue. You never supply the stockout_risk training label.'
+      : 'Scores shortage risk from the stock-out model input block only. You never supply the stockout_risk training label.';
+  }
+
+  private splitMlAndNarrative(data: Record<string, unknown>): {
+    ml: Record<string, unknown>;
+    narrative: string | null;
+    narrativeError: string | null;
+  } {
+    const ml = { ...data };
+    const narrative = ml['narrative'];
+    const narrativeError = ml['narrativeError'];
+    delete ml['narrative'];
+    delete ml['narrativeError'];
+    return {
+      ml,
+      narrative: typeof narrative === 'string' ? narrative : null,
+      narrativeError: typeof narrativeError === 'string' ? narrativeError : null,
+    };
   }
 }

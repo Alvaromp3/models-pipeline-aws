@@ -1,61 +1,162 @@
-<div class="exec-hero exec-hero--compact">
+<div class="exec-hero exec-hero--compact analytics-hero">
+  <div class="analytics-hero__glow" aria-hidden="true"></div>
   <div class="exec-hero__grid" aria-hidden="true"></div>
-  <div class="exec-hero__inner">
-    <p class="exec-hero__kicker">Time series</p>
-    <h1 class="exec-hero__title">Prediction volume</h1>
+  <div class="exec-hero__inner analytics-hero__inner">
+    <p class="exec-hero__kicker">Analytics · NovaRetail</p>
+    <h1 class="exec-hero__title">Uso del motor predictivo</h1>
     <p class="exec-hero__lede">
-      Daily run-rate of ML invocations — use for adoption tracking, surge detection, and capacity planning
-      alongside upstream pipelines.
+      Volumen diario de inferencias, reparto por modelo y señales rápidas para adopción y capacidad. Los datos
+      son <strong>por usuario autenticado</strong> (sus ejecuciones guardadas).
     </p>
   </div>
 </div>
 
 @if (loading) {
-  <div class="state">Loading…</div>
+  <div class="analytics-skeleton" aria-busy="true">
+    <div class="sk-row">
+      <div class="sk sk-kpi"></div>
+      <div class="sk sk-kpi"></div>
+      <div class="sk sk-kpi"></div>
+      <div class="sk sk-kpi"></div>
+    </div>
+    <div class="sk sk-panel"></div>
+  </div>
 } @else if (error) {
   <div class="state err">{{ error }}</div>
-  <button type="button" class="btn" (click)="load()">Retry</button>
+  <button type="button" class="btn" (click)="load()">Reintentar</button>
 } @else {
-  <div class="meta-strip">
-    <span class="meta-strip__label">Calculation base</span>
-    <span class="meta-strip__value"
-      ><strong>{{ sampleSize }}</strong> predictions in the aggregate window</span
-    >
-  </div>
+  <section class="kpi-deck" aria-label="Resumen">
+    <article class="kpi-tile">
+      <span class="kpi-tile__label">Predicciones totales</span>
+      <span class="kpi-tile__value">{{ sampleSize }}</span>
+      <span class="kpi-tile__hint">En la ventana actual (hasta 500 últimas)</span>
+    </article>
+    <article class="kpi-tile kpi-tile--blue">
+      <span class="kpi-tile__label">Revenue</span>
+      <span class="kpi-tile__value">{{ revenueRuns }}</span>
+      <span class="kpi-tile__hint">Regresión · demanda / ingresos</span>
+    </article>
+    <article class="kpi-tile kpi-tile--violet">
+      <span class="kpi-tile__label">Stock-out</span>
+      <span class="kpi-tile__value">{{ stockoutRuns }}</span>
+      <span class="kpi-tile__hint">Clasificación · riesgo de quiebre</span>
+    </article>
+    <article class="kpi-tile kpi-tile--neutral">
+      <span class="kpi-tile__label">Media / día activo</span>
+      <span class="kpi-tile__value">{{ avgPerDay() | number: '1.1-2' }}</span>
+      <span class="kpi-tile__hint">{{ activeDays }} día(s) con al menos una inferencia</span>
+    </article>
+  </section>
 
-  @if (data.length === 0) {
-    <p class="empty">No data yet. Execute models under Predictions to populate the series.</p>
+  @if (dateStart && dateEnd) {
+    <div class="range-strip">
+      <span class="range-strip__icon" aria-hidden="true">◐</span>
+      <span class="range-strip__text">
+        Ventana observada:
+        <strong>{{ dateStart }}</strong>
+        @if (dateEnd !== dateStart) {
+          → <strong>{{ dateEnd }}</strong>
+        }
+      </span>
+      @if (lastRunAt) {
+        <span class="range-strip__meta">Última ejecución: {{ lastRunAt | date: 'medium' }}</span>
+      }
+    </div>
+  }
+
+  @if (sampleSize === 0) {
+    <div class="empty-card">
+      <div class="empty-card__art" aria-hidden="true"></div>
+      <h2 class="empty-card__title">Aún no hay inferencias</h2>
+      <p class="empty-card__text">
+        Ejecute escenarios en <strong>Predictions</strong> para ver tendencias, reparto por modelo y volumen
+        diario aquí.
+      </p>
+      <a routerLink="/predictions" class="empty-card__cta">Ir a Predictions</a>
+    </div>
   } @else {
-    <div class="chart-card">
-      <div class="chart-head">
-        <span class="chart-title">Daily inference volume</span>
-        <span class="chart-sub">Normalized to window maximum</span>
-      </div>
-      <div class="chart-body">
-        <div class="y-axis" aria-hidden="true">
-          @for (t of yTicks; track t) {
-            <span class="y-tick">{{ t }}</span>
+    <div class="analytics-layout">
+      <div class="chart-panel">
+        <header class="panel-top">
+          <div>
+            <h2 class="panel-title">Volumen diario</h2>
+            <p class="panel-sub">Barras escaladas al máximo del periodo · compare picos entre días</p>
+          </div>
+          @if (sparseSeries()) {
+            <span class="panel-badge">Serie corta</span>
           }
-        </div>
-        <div class="chart-plot">
-          <div class="grid-lines" aria-hidden="true">
-            @for (_ of yTicks; track $index) {
-              <div class="grid-line"></div>
+        </header>
+
+        @if (sparseSeries()) {
+          <p class="panel-tip">
+            Con pocos días de datos el gráfico se llenará al acumular histórico. Sigue siendo útil para ver el
+            pico del día y validar que las escrituras en base de datos funcionan.
+          </p>
+        }
+
+        <div class="chart-shell">
+          <div class="y-axis" aria-hidden="true">
+            @for (t of yTickValues; track t) {
+              <span class="y-tick">{{ t }}</span>
             }
           </div>
-          <div class="chart" role="img" aria-label="Volume by day">
-            @for (row of data; track $index) {
-              <div class="bar-col">
-                <span class="bar-value">{{ row.count }}</span>
-                <div class="bar-wrap">
-                  <div class="bar" [style.height]="barHeight(row.count)"></div>
+          <div class="chart-plot">
+            <div class="grid-lines" aria-hidden="true">
+              @for (_ of yTickValues; track $index) {
+                <div class="grid-line"></div>
+              }
+            </div>
+            <div class="chart" role="img" aria-label="Volumen de predicciones por día">
+              @for (row of data; track row.date) {
+                <div class="bar-col">
+                  <span class="bar-value">{{ row.count }}</span>
+                  <div class="bar-wrap">
+                    <div
+                      class="bar"
+                      [class.bar--peak]="row.count === maxCount && maxCount > 0"
+                      [style.height]="barHeight(row.count)"
+                    ></div>
+                  </div>
+                  <time class="date" [attr.datetime]="row.date">{{ row.date }}</time>
                 </div>
-                <span class="date">{{ row.date }}</span>
-              </div>
-            }
+              }
+            </div>
           </div>
         </div>
       </div>
+
+      <aside class="side-panel" aria-label="Distribución por modelo">
+        <h2 class="side-title">Mix de modelos</h2>
+        <p class="side-sub">Proporción de llamadas revenue vs stock-out en su ventana.</p>
+
+        <div class="donut-wrap">
+          <div class="donut" [style.background]="donutGradient()" role="presentation"></div>
+          <div class="donut-center">
+            <span class="donut-pct">{{ revenueSharePercent() }}%</span>
+            <span class="donut-label">revenue</span>
+          </div>
+        </div>
+
+        <ul class="legend">
+          <li class="legend__item">
+            <span class="legend__swatch legend__swatch--blue"></span>
+            <span class="legend__text">Revenue</span>
+            <span class="legend__num">{{ revenueRuns }}</span>
+          </li>
+          <li class="legend__item">
+            <span class="legend__swatch legend__swatch--violet"></span>
+            <span class="legend__text">Stock-out</span>
+            <span class="legend__num">{{ stockoutRuns }}</span>
+          </li>
+        </ul>
+
+        <div class="side-foot">
+          <span class="side-foot__label">Base de cálculo</span>
+          <p class="side-foot__val">
+            <strong>{{ sampleSize }}</strong> predicciones agregadas
+          </p>
+        </div>
+      </aside>
     </div>
   }
 }

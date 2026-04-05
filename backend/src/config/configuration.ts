@@ -53,4 +53,10 @@ export default () => ({
   auth: {
     localLoginEnabled: process.env.AUTH_LOCAL_LOGIN === 'true',
   },
+  /** OpenRouter: narrativa post-predicción (opcional). */
+  openRouter: {
+    apiKey: (process.env.OPEN_ROUTER_API_KEY ?? '').trim(),
+    model: (process.env.OPEN_ROUTER_MODEL ?? 'openai/gpt-4o-mini').trim(),
+    httpReferer: (process.env.OPEN_ROUTER_HTTP_REFERER ?? '').trim(),
+  },
 });

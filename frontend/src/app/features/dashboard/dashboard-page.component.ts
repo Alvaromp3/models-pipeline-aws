@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import {
   DashboardSummary,
   NovaApiService,
@@ -9,7 +10,7 @@ import { JsonHighlightPipe } from '../../shared/json-highlight.pipe';
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [DatePipe, JsonHighlightPipe],
+  imports: [DatePipe, JsonHighlightPipe, RouterLink],
   templateUrl: './dashboard-page.component.html',
   styleUrl: './dashboard-page.component.scss',
 })

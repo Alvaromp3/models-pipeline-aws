@@ -129,11 +129,12 @@ button:focus-visible {
   margin-bottom: 1.35rem;
   padding: 1.5rem 1.65rem 1.65rem;
   border-radius: var(--nr-radius-lg);
-  background: linear-gradient(128deg, #060a12 0%, #0a1120 38%, #0f1a32 100%);
-  border: 1px solid rgb(255 255 255 / 9%);
+  background: linear-gradient(132deg, #050810 0%, #0a1120 36%, #101f3d 58%, #0d1528 100%);
+  border: 1px solid rgb(255 255 255 / 10%);
   box-shadow:
-    0 4px 28px rgb(0 0 0 / 22%),
-    inset 0 1px 0 rgb(255 255 255 / 5%);
+    0 4px 28px rgb(0 0 0 / 24%),
+    0 0 0 1px rgb(255 255 255 / 4%) inset,
+    inset 0 1px 0 rgb(255 255 255 / 6%);
   overflow: hidden;
 
   &--compact {

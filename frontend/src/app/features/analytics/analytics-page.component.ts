@@ -1,9 +1,12 @@
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { NovaApiService } from '../../core/api/nova-api.service';
 
 @Component({
   selector: 'app-analytics-page',
   standalone: true,
+  imports: [DatePipe, DecimalPipe, RouterLink],
   templateUrl: './analytics-page.component.html',
   styleUrl: './analytics-page.component.scss',
 })
@@ -15,6 +18,12 @@ export class AnalyticsPageComponent implements OnInit {
   maxCount = 1;
   data: { date: string; count: number }[] = [];
   sampleSize = 0;
+  revenueRuns = 0;
+  stockoutRuns = 0;
+  activeDays = 0;
+  dateStart: string | null = null;
+  dateEnd: string | null = null;
+  lastRunAt: string | null = null;
 
   ngOnInit(): void {
     this.load();
@@ -28,6 +37,13 @@ export class AnalyticsPageComponent implements OnInit {
         this.data = agg.volumeByDay;
         this.sampleSize = agg.sampleSize;
         this.maxCount = Math.max(1, ...this.data.map((d) => d.count));
+        const bk = agg.byKind;
+        this.revenueRuns = bk?.revenue ?? 0;
+        this.stockoutRuns = bk?.stockout_risk ?? 0;
+        this.activeDays = agg.activeDays ?? this.data.length;
+        this.dateStart = agg.dateRange?.start ?? null;
+        this.dateEnd = agg.dateRange?.end ?? null;
+        this.lastRunAt = agg.lastRunAt ?? null;
         this.loading = false;
       },
       error: () => {
@@ -41,9 +57,36 @@ export class AnalyticsPageComponent implements OnInit {
     return `${(count / this.maxCount) * 100}%`;
   }
 
-  /** Etiquetas eje Y (densidad analítica). */
-  get yTicks(): string[] {
+  get yTickValues(): number[] {
     const m = this.maxCount;
-    return [String(m), String(Math.round(m * 0.66)), String(Math.round(m * 0.33)), '0'];
+    const n = 5;
+    return Array.from({ length: n }, (_, i) =>
+      Math.round((m * (n - 1 - i)) / (n - 1)),
+    );
+  }
+
+  avgPerDay(): number {
+    if (this.activeDays < 1) return 0;
+    return this.sampleSize / this.activeDays;
+  }
+
+  /** Porcentaje revenue para gráfico circular (0–100). */
+  revenueSharePercent(): number {
+    const t = this.revenueRuns + this.stockoutRuns;
+    if (t === 0) return 50;
+    return Math.round((100 * this.revenueRuns) / t);
+  }
+
+  /** Gradiente cónico para donut CSS. */
+  donutGradient(): string {
+    const p = this.revenueSharePercent();
+    return `conic-gradient(
+      #0047ab 0% ${p}%,
+      #7c4ddb ${p}% 100%
+    )`;
+  }
+
+  sparseSeries(): boolean {
+    return this.data.length <= 2;
   }
 }

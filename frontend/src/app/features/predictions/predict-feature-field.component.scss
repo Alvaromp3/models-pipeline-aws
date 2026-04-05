@@ -1,0 +1,57 @@
+.pff-shell {
+  display: block;
+  min-width: 0;
+}
+
+.retail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.retail-field__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--nr-muted);
+}
+
+.retail-field__hint {
+  font-size: 0.7rem;
+  line-height: 1.45;
+  color: var(--nr-text-secondary);
+}
+
+.retail-field__input,
+.retail-field__select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--nr-border);
+  border-radius: var(--nr-radius-sm);
+  font-size: 0.88rem;
+  font-family: var(--nr-font-body);
+  color: var(--nr-text);
+  background: var(--nr-bg-elevated);
+
+  &:focus {
+    outline: none;
+    border-color: rgb(0 71 171 / 45%);
+    box-shadow: 0 0 0 3px rgb(0 71 171 / 12%);
+  }
+}
+
+.retail-field__select {
+  cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--nr-muted) 50%),
+    linear-gradient(135deg, var(--nr-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.15rem) 55%,
+    calc(100% - 0.75rem) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
+}

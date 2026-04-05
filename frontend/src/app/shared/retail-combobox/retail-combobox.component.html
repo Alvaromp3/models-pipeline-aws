@@ -1,0 +1,50 @@
+<div class="retail-combo">
+  <label class="retail-combo__label" [attr.for]="controlId">{{ label }}</label>
+  @if (hint) {
+    <p class="retail-combo__hint">{{ hint }}</p>
+  }
+  <div class="retail-combo__wrap">
+    <input
+      [id]="controlId"
+      type="text"
+      class="retail-combo__input"
+      [attr.autocomplete]="autocomplete"
+      [placeholder]="placeholder"
+      [disabled]="disabled"
+      [value]="value"
+      (input)="onInputEvent($event)"
+      (focus)="open = true"
+      (blur)="onBlurField()"
+    />
+    @if (suggestions.length) {
+      <button
+        type="button"
+        class="retail-combo__chev"
+        [disabled]="disabled"
+        (click)="togglePanel(); $event.stopPropagation()"
+        [attr.aria-expanded]="open"
+        [attr.aria-controls]="controlId + '-listbox'"
+        title="Show suggestions"
+      >
+        ▾
+      </button>
+    }
+    @if (open && suggestions.length && !disabled) {
+      <ul
+        class="retail-combo__panel"
+        [id]="controlId + '-listbox'"
+        role="listbox"
+        (mousedown)="$event.preventDefault()"
+      >
+        @for (opt of filteredSuggestions; track opt) {
+          <li role="option" class="retail-combo__opt" tabindex="-1" (mousedown)="selectOption(opt)">
+            {{ opt }}
+          </li>
+        }
+        @if (filteredSuggestions.length === 0) {
+          <li class="retail-combo__empty">No matches — keep typing to use a custom value</li>
+        }
+      </ul>
+    }
+  </div>
+</div>

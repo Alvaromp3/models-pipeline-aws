@@ -16,7 +16,7 @@ os.environ.setdefault("PYDANTIC_DISABLE_PLUGINS", "1")
 os.environ.setdefault("AWS_EC2_METADATA_DISABLED", "true")
 
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait
 from typing import Any
 
 from fastapi import FastAPI
@@ -25,8 +25,9 @@ from pydantic import BaseModel
 from app.model_store import (
     get_revenue_model,
     get_stockout_model,
+    list_feature_names,
     models_status,
-    predict_regression,
+    predict_regression_with_confidence,
     predict_risk_score,
 )
 
@@ -55,14 +56,49 @@ class HealthResponse(BaseModel):
     models: dict[str, Any]
 
 
+class ModelFeaturesResponse(BaseModel):
+    revenue_features: list[str]
+    stockout_features: list[str]
+
+
+@app.get("/metadata/features", response_model=ModelFeaturesResponse)
+def metadata_features() -> ModelFeaturesResponse:
+    """Expected input columns from loaded joblib models (`feature_names_in_`), empty if stub/unavailable."""
+    rev, _ = get_revenue_model()
+    st, _ = get_stockout_model()
+    return ModelFeaturesResponse(
+        revenue_features=list_feature_names(rev),
+        stockout_features=list_feature_names(st),
+    )
+
+
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     base = s3_env_snapshot()
+    degraded = {
+        **base,
+        "revenueObjectHeadOk": None,
+        "stockoutObjectHeadOk": None,
+        "s3ProbeTimedOut": True,
+    }
     with ThreadPoolExecutor(max_workers=2) as pool:
         f_snap = pool.submit(enrich_snapshot_with_model_heads, base)
         f_reach = pool.submit(can_reach_s3_bucket)
-        snap = f_snap.result()
-        reachable = f_reach.result()
+        done, _pending = wait([f_snap, f_reach], timeout=12)
+        snap: dict[str, Any] = degraded
+        reachable: bool | None = None
+        if f_snap in done:
+            try:
+                snap = f_snap.result()
+            except Exception as e:  # noqa: BLE001
+                logger.warning("enrich_snapshot_with_model_heads: %s", e)
+                snap = degraded
+        if f_reach in done:
+            try:
+                reachable = f_reach.result()
+            except Exception as e:  # noqa: BLE001
+                logger.warning("can_reach_s3_bucket: %s", e)
+                reachable = None
     return HealthResponse(
         s3=snap,
         s3BucketReachable=reachable,
@@ -77,14 +113,14 @@ def predict_revenue(body: dict) -> dict:
     predict_err: str | None = None
     if model is not None:
         try:
-            value = predict_regression(model, body)
+            value, confidence = predict_regression_with_confidence(model, body)
             src = models_status().get("revenueLoadSource")
             name = f"joblib_revenue_{src}" if src else "joblib_revenue"
             return {
                 "model": name,
                 "region": region,
                 "predicted_revenue_units": round(float(value), 4),
-                "confidence": None,
+                "confidence": confidence,
             }
         except Exception as e:  # noqa: BLE001
             logger.warning("predict/revenue: modelo S3 no aplicó al payload: %s", e)
@@ -105,7 +141,7 @@ def predict_revenue(body: dict) -> dict:
 
 @app.post("/predict/stockout-risk")
 def predict_stockout(body: dict) -> dict:
-    sku = body.get("sku") or "unknown"
+    sku = body.get("sku") or body.get("sku_id") or "unknown"
     model, load_err = get_stockout_model()
     predict_err: str | None = None
     if model is not None:

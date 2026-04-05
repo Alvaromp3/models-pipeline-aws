@@ -1,0 +1,48 @@
+<div class="pff-shell" (focusin)="onFocusIn()" (focusout)="onFocusOut()">
+@switch (kind()) {
+  @case ('combobox') {
+    <app-retail-combobox
+      [label]="label()"
+      [controlId]="controlId()"
+      [attr.name]="fieldName()"
+      [placeholder]="'Type or select ' + label()"
+      [hint]="hint() || 'Type any value; the list is optional.'"
+      [suggestions]="suggestions()"
+      [(ngModel)]="values[feature]"
+    />
+  }
+  @case ('numeric') {
+    <label class="retail-field">
+      <span class="retail-field__label">{{ label() }}</span>
+      @if (hint()) {
+        <span class="retail-field__hint">{{ hint() }}</span>
+      }
+      <input
+        type="text"
+        class="retail-field__input"
+        [attr.name]="fieldName()"
+        [attr.inputmode]="'decimal'"
+        [(ngModel)]="values[feature]"
+        [placeholder]="'Numeric · ' + label()"
+        autocomplete="off"
+      />
+    </label>
+  }
+  @default {
+    <label class="retail-field">
+      <span class="retail-field__label">{{ label() }}</span>
+      @if (hint()) {
+        <span class="retail-field__hint">{{ hint() }}</span>
+      }
+      <input
+        type="text"
+        class="retail-field__input"
+        [attr.name]="fieldName()"
+        [(ngModel)]="values[feature]"
+        [placeholder]="label()"
+        autocomplete="off"
+      />
+    </label>
+  }
+}
+</div>

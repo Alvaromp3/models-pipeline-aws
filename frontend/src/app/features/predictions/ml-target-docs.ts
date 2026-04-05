@@ -45,19 +45,19 @@ export type MlOutputDoc = {
 export const ML_OUTPUT_DOCS: MlOutputDoc[] = [
   {
     field: 'predicted_revenue_units',
-    model: 'Ingresos',
+    model: 'Revenue (retail regression)',
     meaning:
-      'Estimación numérica del modelo de regresión (unidades monetarias o escala acordada con el entrenamiento). Sustituye al target `revenue` en tiempo de inferencia: es la “respuesta” del modelo ante la fila de features enviada.',
+      'Point forecast of retail revenue (or the scale used in training) for the feature row you sent. At inference it replaces the historical `revenue` target: it is the model’s answer given store, SKU, price, promo, inventory, and related retail signals.',
     businessUse:
-      'Comparar con objetivo de ventas o con escenarios base/alternativos; si el pipeline está en escala log o normalizada, documentar internamente el factor de reversión antes de usarlo en reporting ejecutivo.',
+      'Compare to sales plans, prior weeks, or alternate scenarios; if training used log or normalized targets, document the back-transform before executive reporting.',
   },
   {
     field: 'risk_score',
-    model: 'Stock-out',
+    model: 'Stock-out (retail classification)',
     meaning:
-      'Puntuación de riesgo entre 0 y 1 cuando el estimador expone probabilidad de clase positiva (`predict_proba`); en modelos sin probabilidades puede ser la clase o un score bruto acotado por el servicio.',
+      'Score in [0, 1] when the classifier exposes `predict_proba` for the positive (high-risk) class; otherwise a raw class or bounded score from the estimator.',
     businessUse:
-      'Umbralizar alertas (p. ej. >0,7) para priorizar SKUs en tableros de operaciones; conviene calibrar el punto de corte con negocio según coste de falso alarma vs coste de rotura real.',
+      'Threshold alerts (e.g. above 0.7) to prioritize replenishment, transfers, or vendor escalations; tune the cutoff with ops using cost of false alarm vs lost sales from stock-outs.',
   },
   {
     field: 'alert',

@@ -1,11 +1,12 @@
 <div class="exec-hero">
   <div class="exec-hero__grid" aria-hidden="true"></div>
   <div class="exec-hero__inner">
-    <p class="exec-hero__kicker">Predictive engine · NovaRetail</p>
-    <h1 class="exec-hero__title">Decision laboratory</h1>
+    <p class="exec-hero__kicker">Retail intelligence · NovaRetail</p>
+    <h1 class="exec-hero__title">Sales prediction console</h1>
     <p class="exec-hero__lede">
-      Run scenarios on the same feature schema used in training, monitor artifact health (local / S3), and
-      keep targets, dictionary, and model outputs aligned for executive review.
+      Input fields are generated from each joblib’s <code>feature_names_in_</code> (via the API metadata
+      endpoint), so you only send what the trained pipeline expects. Run <strong>revenue regression</strong> and
+      <strong>stock-out risk classification</strong>, then review structured outputs and narrative context.
     </p>
   </div>
 </div>
@@ -17,7 +18,7 @@
     [class.exec-tab--active]="activeTab === 'console'"
     (click)="setTab('console')"
   >
-    Model console
+    Prediction console
   </button>
   <button
     type="button"
@@ -33,7 +34,7 @@
     [class.exec-tab--active]="activeTab === 'targets'"
     (click)="setTab('targets')"
   >
-    Target variables
+    Targets &amp; outputs
   </button>
 </nav>
 
@@ -45,17 +46,21 @@
       <p class="health-err">{{ mlHealthError }}</p>
       <button type="button" class="btn ghost sm" (click)="refreshMlHealth()">Retry</button>
     } @else if (mlHealth) {
-      <div class="status-strip">
+      <div
+        class="status-strip"
+        [class.status-strip--live]="mlEnginesActive()"
+        [class.status-strip--stub]="!mlEnginesActive()"
+      >
         <div class="status-strip-top">
           @if (mlEnginesActive()) {
             <span class="status-led-wrap">
               <span class="status-led" aria-hidden="true"></span>
-              <span class="status-led-label">Active</span>
+              <span class="status-led-label">Production artifacts</span>
             </span>
           } @else {
             <span class="status-led-wrap status-led-wrap--idle">
               <span class="status-led status-led--idle" aria-hidden="true"></span>
-              <span class="status-led-label">Stub / idle</span>
+              <span class="status-led-label">Stub / dev mode</span>
             </span>
           }
           <button type="button" class="btn ghost sm" (click)="refreshMlHealth()">Refresh</button>
@@ -66,52 +71,144 @@
           @if (modelSourcesLine()) {
             <span class="status-meta">{{ modelSourcesLine() }}</span>
           }
+          @if (!mlEnginesActive()) {
+            <p class="status-hint">
+              Responses are fine for integration tests but may use <strong>stubs</strong> until
+              <code>.joblib</code> artifacts load from S3 or local disk. Check keys and credentials on the ML
+              service.
+            </p>
+          }
         </div>
-        @if (s3ModelsLine()) {
-          <p class="status-s3">{{ s3ModelsLine() }}</p>
+        @if (s3StatusItems().length) {
+          <ul class="status-s3-list" aria-label="Storage checks">
+            @for (item of s3StatusItems(); track item) {
+              <li>{{ item }}</li>
+            }
+          </ul>
         }
       </div>
     }
 
-    <section class="card feature-card exec-card">
-      <header>
-        <h2>Feature payload</h2>
-        <p class="sub">
-          Monospace JSON row aligned to your training Parquet. Region and SKU merge on each run.
-        </p>
-      </header>
-      @if (featureJsonError) {
-        <p class="err">{{ featureJsonError }}</p>
-      }
-      <textarea
-        class="feature-json"
-        name="featureJson"
-        rows="12"
-        spellcheck="false"
-        [(ngModel)]="featureJsonText"
-      ></textarea>
-      <button type="button" class="btn ghost" (click)="resetFeatureJson()">Restore template</button>
-    </section>
+    @if (loadingFeatures) {
+      <p class="health-loading">Loading model input schema from ML metadata…</p>
+    } @else if (featuresError) {
+      <p class="health-err">{{ featuresError }}</p>
+      <button type="button" class="btn ghost sm" (click)="refreshModelFeatures()">Retry schema</button>
+    } @else {
+      <section class="card exec-card retail-scenario-card">
+        <header>
+          <h2>Retail model inputs</h2>
+          <p class="sub">
+            Fields mirror <strong>only</strong> the columns your joblib exposes as
+            <code>feature_names_in_</code>. Training targets (<code>revenue</code>,
+            <code>stockout_risk</code>) are never requested. Blank cells are omitted from the JSON — no extra
+            keys. Suggestion lists are optional shortcuts; you can always type custom retail values.
+          </p>
+          <p class="schema-strip">{{ schemaSummaryLine() }}</p>
+        </header>
+
+        <div class="retail-form retail-form--with-helper">
+          <div class="retail-form-layout">
+            <div class="retail-form-layout__main">
+              @if (shareableSchema && revenueFeatures.length > 0) {
+                <div class="retail-form__grid">
+                  @for (name of revenueFeatures; track name) {
+                    <app-predict-feature-field
+                      [feature]="name"
+                      [values]="valuesShared"
+                      idPrefix="pred-sh"
+                      valueScope="shared"
+                    />
+                  }
+                </div>
+              }
+
+              @if (!shareableSchema && revenueFeatures.length > 0) {
+                <h3 class="retail-form__group-title">Revenue model · input features</h3>
+                <div class="retail-form__grid">
+                  @for (name of revenueFeatures; track name) {
+                    <app-predict-feature-field
+                      [feature]="name"
+                      [values]="valuesRevenue"
+                      idPrefix="pred-rev"
+                      valueScope="rev"
+                    />
+                  }
+                </div>
+              }
+
+              @if (!shareableSchema && stockoutFeatures.length > 0) {
+                <h3 class="retail-form__group-title">Stock-out model · input features</h3>
+                <div class="retail-form__grid">
+                  @for (name of stockoutFeatures; track name) {
+                    <app-predict-feature-field
+                      [feature]="name"
+                      [values]="valuesStockout"
+                      idPrefix="pred-st"
+                      valueScope="stock"
+                    />
+                  }
+                </div>
+              }
+
+              @if (revenueFeatures.length === 0 && stockoutFeatures.length === 0) {
+                <p class="schema-empty">
+                  No input columns were returned. This is normal for <strong>stub</strong> mode. Deploy trained
+                  retail joblib artifacts (with sklearn <code>feature_names_in_</code>) and refresh schema.
+                </p>
+              }
+
+              <div class="retail-form__actions">
+                <button type="button" class="btn ghost" (click)="resetScenario()">Reset to sample values</button>
+                <button type="button" class="btn ghost" (click)="refreshModelFeatures()">Refresh schema</button>
+                <button type="button" class="btn ghost" (click)="refreshAll()">Refresh schema + ML status</button>
+              </div>
+            </div>
+
+            @if (revenueFeatures.length > 0 || stockoutFeatures.length > 0) {
+              <aside class="retail-form-layout__aside" aria-label="Retail value helper">
+                <app-prediction-field-helper />
+              </aside>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="card exec-card payload-card">
+        <header>
+          <h2>Request payload preview</h2>
+          <p class="sub">
+            Strict JSON: only model input keys, in training order. Empty values are omitted (ML fills missing
+            cells as NaN where applicable).
+          </p>
+        </header>
+        @if (shareableSchema) {
+          <pre class="payload-pre" aria-label="Shared JSON payload">{{ payloadJsonShared() }}</pre>
+        } @else {
+          <div class="payload-split">
+            <div>
+              <span class="payload-split__label">Revenue · POST /predictions/revenue</span>
+              <pre class="payload-pre payload-pre--half" aria-label="Revenue JSON">{{ payloadJsonRevenue() }}</pre>
+            </div>
+            <div>
+              <span class="payload-split__label">Stock-out · POST /predictions/stockout-risk</span>
+              <pre class="payload-pre payload-pre--half" aria-label="Stock-out JSON">{{ payloadJsonStockout() }}</pre>
+            </div>
+          </div>
+        }
+      </section>
+    }
 
     <div class="grid">
       <article class="card exec-card exec-card--accent">
         <header>
           <span class="card-badge">Regression</span>
-          <h2>Forecast revenue</h2>
-          <p class="sub">Endpoint <code>POST /predict/revenue</code></p>
+          <h2>Revenue prediction</h2>
+          <p class="sub">Backend <code>POST /predictions/revenue</code></p>
+          <p class="card-desc">{{ revenueScenarioCopy() }}</p>
         </header>
-        <div class="fields">
-          <label>
-            Region
-            <input type="text" [(ngModel)]="region" name="region" />
-          </label>
-          <label>
-            SKU (<code>sku_id</code>)
-            <input type="text" [(ngModel)]="skuRevenue" name="skuRevenue" />
-          </label>
-        </div>
         <button type="button" class="btn primary" (click)="runRevenue()" [disabled]="loadingRev">
-          {{ loadingRev ? 'Running…' : 'Run scenario' }}
+          {{ loadingRev ? 'Running ML + narrative…' : 'Run revenue forecast' }}
         </button>
         @if (errorRev) {
           <p class="err">{{ errorRev }}</p>
@@ -121,6 +218,17 @@
             <span class="out-label">Structured output</span>
             <div class="json-snippet json-snippet--block" [innerHTML]="resultRev | jsonHighlight"></div>
           </div>
+          @if (explainRev) {
+            <div class="llm-insight">
+              <span class="llm-insight__label">Interpretation · suggested actions</span>
+              <p class="llm-insight__text">{{ explainRev }}</p>
+            </div>
+          } @else if (explainRevNote) {
+            <div class="llm-insight llm-insight--note">
+              <span class="llm-insight__label">Narrative (OpenRouter)</span>
+              <p class="llm-insight__note">{{ explainRevNote }}</p>
+            </div>
+          }
         }
       </article>
 
@@ -128,16 +236,11 @@
         <header>
           <span class="card-badge card-badge--violet">Classification</span>
           <h2>Stock-out risk</h2>
-          <p class="sub">Endpoint <code>POST /predict/stockout-risk</code></p>
+          <p class="sub">Backend <code>POST /predictions/stockout-risk</code></p>
+          <p class="card-desc">{{ stockScenarioCopy() }}</p>
         </header>
-        <div class="fields">
-          <label>
-            SKU (<code>sku_id</code>)
-            <input type="text" [(ngModel)]="skuStock" name="skuStock" />
-          </label>
-        </div>
         <button type="button" class="btn secondary" (click)="runStockout()" [disabled]="loadingStock">
-          {{ loadingStock ? 'Scoring…' : 'Evaluate risk' }}
+          {{ loadingStock ? 'Running ML + narrative…' : 'Run stock-out risk' }}
         </button>
         @if (errorStock) {
           <p class="err">{{ errorStock }}</p>
@@ -147,6 +250,17 @@
             <span class="out-label">Structured output</span>
             <div class="json-snippet json-snippet--block" [innerHTML]="resultStock | jsonHighlight"></div>
           </div>
+          @if (explainStock) {
+            <div class="llm-insight llm-insight--violet">
+              <span class="llm-insight__label">Interpretation · suggested actions</span>
+              <p class="llm-insight__text">{{ explainStock }}</p>
+            </div>
+          } @else if (explainStockNote) {
+            <div class="llm-insight llm-insight--note llm-insight--violet">
+              <span class="llm-insight__label">Narrative (OpenRouter)</span>
+              <p class="llm-insight__note">{{ explainStockNote }}</p>
+            </div>
+          }
         }
       </article>
     </div>
@@ -157,10 +271,10 @@
   <div class="tab-panel">
     <section class="card table-card exec-card">
       <header>
-        <h2>Training dataset (clean)</h2>
+        <h2>Retail sales dataset (schema)</h2>
         <p class="sub">
-          Dense retail feature reference — types mirror Snappy Parquet after ETL; names must match the
-          serialized <code>joblib</code> pipeline.
+          Field names and types mirror your cleaned training table. Categoricals are encoded in the joblib
+          pipeline; send raw retail values here as in the source extract.
         </p>
       </header>
       <div class="table-wrap exec-table-wrap">
@@ -195,8 +309,8 @@
       <header>
         <h2>Training targets</h2>
         <p class="sub">
-          Magnitudes the models learn to predict or classify. Clear definitions reduce misinterpretation in
-          committees and sign-off flows.
+          What each model learns from your retail history. These columns are not user inputs at inference on
+          this console.
         </p>
       </header>
       <div class="table-wrap exec-table-wrap">
@@ -229,7 +343,7 @@
       <header>
         <h2>API outputs (inference)</h2>
         <p class="sub">
-          Common response keys after calling the ML service — use for dashboards and risk forums.
+          Typical response keys from the ML layer — use for dashboards and operational review.
         </p>
       </header>
       <div class="table-wrap exec-table-wrap">

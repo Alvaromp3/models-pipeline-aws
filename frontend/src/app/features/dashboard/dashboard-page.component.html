@@ -1,11 +1,13 @@
-<div class="exec-hero exec-hero--compact">
+<div class="exec-hero exec-hero--compact exec-hero--dashboard">
+  <div class="exec-hero__glow" aria-hidden="true"></div>
   <div class="exec-hero__grid" aria-hidden="true"></div>
-  <div class="exec-hero__inner">
-    <p class="exec-hero__kicker">Command overview</p>
-    <h1 class="exec-hero__title">Executive decision summary</h1>
+  <div class="exec-hero__inner exec-hero__inner--wide">
+    <p class="exec-hero__kicker">NovaRetail · Intelligence</p>
+    <h1 class="exec-hero__title">Panel ejecutivo</h1>
     <p class="exec-hero__lede">
-      Live KPIs and the latest inference runs persisted to your warehouse — a single pane for leadership
-      review before operational commits.
+      Vista consolidada de inferencias guardadas y del papel de cada motor predictivo. Use los KPIs para
+      seguimiento operativo; el bloque inferior resume <strong>para qué sirve cada modelo</strong> antes de
+      comprometer compras o stock.
     </p>
   </div>
 </div>
@@ -21,32 +23,131 @@
   <div class="state err">{{ error }}</div>
   <button type="button" class="btn" (click)="load()">Retry</button>
 } @else if (summary) {
-  <section class="kpis">
+  <section class="insight-deck" aria-labelledby="insight-deck-title">
+    <div class="insight-deck__head">
+      <h2 id="insight-deck-title" class="insight-deck__title">Los dos motores de predicción</h2>
+      <p class="insight-deck__sub">
+        Son <strong>problemas distintos</strong>: uno estima magnitud (demanda); el otro evalúa riesgo
+        (ruptura). Complementarios en compras y planificación.
+      </p>
+    </div>
+    <div class="insight-grid">
+      <article class="insight-card insight-card--revenue">
+        <div class="insight-card__accent" aria-hidden="true"></div>
+        <div class="insight-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <path
+              d="M6 22V10l10-4 10 4v12l-10 4-10-4Z"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linejoin="round"
+            />
+            <path d="M16 6v20M6 10l10 4 10-4" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+        </div>
+        <header class="insight-card__header">
+          <span class="insight-card__badge">Regresión</span>
+          <h3 class="insight-card__name">Pronóstico de ingresos / demanda</h3>
+          <p class="insight-card__hook">
+            Estima <strong>cuánto</strong> se espera vender (o unidades de demanda) a partir del mismo esquema
+            de features que en entrenamiento.
+          </p>
+        </header>
+        <ul class="insight-card__list">
+          <li>Planificación de compras y presupuesto de catálogo por región / SKU.</li>
+          <li>Anticipar picos o caídas para campañas, pricing y capacidad logística.</li>
+          <li>Base cuantitativa en comités: escenarios reproducibles frente a intuición sola.</li>
+        </ul>
+        <a routerLink="/predictions" class="insight-card__cta">
+          Ejecutar en laboratorio
+          <span class="insight-card__cta-arrow" aria-hidden="true">→</span>
+        </a>
+      </article>
+
+      <article class="insight-card insight-card--risk">
+        <div class="insight-card__accent insight-card__accent--violet" aria-hidden="true"></div>
+        <div class="insight-card__icon insight-card__icon--violet" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <path
+              d="M16 4 4 9v7c0 6.6 5.04 12.74 12 14 6.96-1.26 12-7.4 12-14V9L16 4Z"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linejoin="round"
+            />
+            <path d="M16 12v6M16 22h.01" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+          </svg>
+        </div>
+        <header class="insight-card__header">
+          <span class="insight-card__badge insight-card__badge--violet">Clasificación / riesgo</span>
+          <h3 class="insight-card__name">Riesgo de quiebre de stock (stock-out)</h3>
+          <p class="insight-card__hook">
+            Evalúa la <strong>probabilidad</strong> de quedarse sin inventario y si conviene generar alerta
+            operativa.
+          </p>
+        </header>
+        <ul class="insight-card__list">
+          <li>Priorizar reposición y órdenes urgentes frente a SKUs frágiles.</li>
+          <li>Reducir roturas en punta de venta y multas de servicio.</li>
+          <li>Complementa al pronóstico de demanda: volumen vs. probabilidad de ruptura.</li>
+        </ul>
+        <a routerLink="/predictions" class="insight-card__cta insight-card__cta--violet">
+          Evaluar riesgo
+          <span class="insight-card__cta-arrow" aria-hidden="true">→</span>
+        </a>
+      </article>
+    </div>
+  </section>
+
+  <section class="kpis" aria-label="Key metrics">
     <article class="kpi">
+      <span class="kpi-icon kpi-icon--neutral" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M4 19V5M4 19h16M8 17V9m4 8V6m4 11v-5m4 5v-9" stroke-linecap="round" />
+        </svg>
+      </span>
       <span class="kpi-label">Total predictions</span>
       <span class="kpi-value">{{ summary.kpis.totalPredictions }}</span>
-      <span class="kpi-hint">vs. LY accumulated · enterprise scope</span>
+      <span class="kpi-hint">Histórico acumulado en el almacén de inferencias</span>
     </article>
     <article class="kpi accent">
+      <span class="kpi-icon kpi-icon--blue" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M12 3v18M7 15l5 6 5-6" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M7 9h10" stroke-linecap="round" />
+        </svg>
+      </span>
       <span class="kpi-label">Revenue model runs</span>
       <span class="kpi-value">{{ summary.kpis.revenueRuns }}</span>
-      <span class="kpi-hint">Forecast &amp; planning signal</span>
+      <span class="kpi-hint">Escenarios de demanda / revenue ejecutados</span>
     </article>
     <article class="kpi accent2">
+      <span class="kpi-icon kpi-icon--violet" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path
+            d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z"
+            stroke-linecap="round"
+          />
+          <path d="M12 8v5M12 16h.01" stroke-linecap="round" />
+        </svg>
+      </span>
       <span class="kpi-label">Stock-out evaluations</span>
       <span class="kpi-value">{{ summary.kpis.stockoutRuns }}</span>
-      <span class="kpi-hint">Supply risk surface</span>
+      <span class="kpi-hint">Evaluaciones de riesgo de quiebre</span>
     </article>
   </section>
 
   <section class="panel exec-panel">
     <div class="panel-head">
-      <h2>Recent activity</h2>
-      <span class="hint">Newest first · full payload trace</span>
+      <div>
+        <h2>Actividad reciente</h2>
+        <p class="panel-lede">Últimas respuestas persistidas · trazabilidad para auditoría</p>
+      </div>
+      <span class="hint">Más reciente primero</span>
     </div>
     @if (summary.recentActivity.length === 0) {
       <p class="empty">
-        No runs yet. Open <strong>Predictions</strong> to execute models and populate this feed.
+        Aún no hay ejecuciones. Abra <strong>Predictions</strong> para lanzar los modelos y alimentar este
+        historial.
       </p>
     } @else {
       <div class="table-wrap">
@@ -54,8 +155,8 @@
           <thead>
             <tr>
               <th>Timestamp</th>
-              <th>Analysis type</th>
-              <th>Result payload</th>
+              <th>Tipo de análisis</th>
+              <th>Payload de respuesta</th>
             </tr>
           </thead>
           <tbody>

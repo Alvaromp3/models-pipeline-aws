@@ -1,0 +1,51 @@
+<div
+  class="pfh"
+  (mousedown)="onPanelMouseDown($event)"
+  role="complementary"
+  aria-label="Field suggestions"
+>
+  <div class="pfh__head">
+    <span class="pfh__kicker">Active field</span>
+    @if (activeLabel(); as lab) {
+      <h3 class="pfh__title">{{ lab }}</h3>
+    } @else {
+      <h3 class="pfh__title pfh__title--idle">None</h3>
+      <p class="pfh__idle">Focus any input to open retail hints and quick picks.</p>
+    }
+  </div>
+
+  <div class="pfh__body">
+    @if (!ctx.activeField()) {
+      <p class="pfh__body-idle">
+        The sidebar shows dataset-style values for the focused column — typing and combobox search stay
+        available in the form.
+      </p>
+    } @else {
+      @if (panel(); as p) {
+      @if (p.context) {
+        <p class="pfh__context">{{ p.context }}</p>
+      }
+      @if (p.rangeNote) {
+        <p class="pfh__range">{{ p.rangeNote }}</p>
+      }
+      @if (p.chips.length > 0) {
+        <span class="pfh__chips-label">Quick pick</span>
+        <ul class="pfh__chips" role="listbox" [attr.aria-label]="'Suggestions for ' + p.title">
+          @for (c of p.chips; track c.value) {
+            <li role="option">
+              <button type="button" class="pfh__chip" (mousedown)="pick(c.value, $event)">
+                {{ c.label }}
+              </button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="pfh__empty">No preset list — type a value that matches your training extract.</p>
+      }
+      <p class="pfh__foot">
+        <span class="pfh__src">Source: {{ p.source === 'static' ? 'sample retail domain (replaceable with API)' : 'dataset' }}</span>
+      </p>
+      }
+    }
+  </div>
+</div>
