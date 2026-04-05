@@ -6,19 +6,20 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "postinstall": "node ../scripts/repair-npm-bin.cjs",
     "build": "tsc -p tsconfig.build.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "node dist/main.js",
     "start:dev": "npx --yes nodemon@3.1.9",
     "start:dev:tsx": "tsx watch src/main.ts",
-    "start:debug": "nest start --debug --watch",
+    "start:debug": "node ./node_modules/@nestjs/cli/bin/nest.js start --debug --watch",
     "start:prod": "node dist/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "jest --forceExit",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test": "jest --config jest.config.cjs --forceExit",
+    "test:watch": "jest --config jest.config.cjs --watch",
+    "test:cov": "jest --config jest.config.cjs --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest.js --config jest.config.cjs --runInBand",
+    "test:e2e": "jest --config jest-e2e.config.cjs --forceExit"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
@@ -57,6 +58,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
     "jest": "^29.5.0",
+    "nodemon": "^3.1.14",
     "prettier": "^3.0.0",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
@@ -69,22 +71,5 @@
   },
   "engines": {
     "node": "18.x || 20.x"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
 }
