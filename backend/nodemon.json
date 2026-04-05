@@ -1,0 +1,12 @@
+{
+  "watch": ["src"],
+  "ext": "ts,json",
+  "ignore": ["src/**/*.spec.ts", "node_modules", "dist"],
+  "exec": "tsx src/main.ts",
+  "delay": 300,
+  "watchOptions": {
+    "usePolling": true,
+    "interval": 1000,
+    "binaryInterval": 3000
+  }
+}

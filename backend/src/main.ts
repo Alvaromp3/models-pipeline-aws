@@ -20,7 +20,10 @@ async function bootstrap() {
   bootLog('NestFactory.create(AppModule)…');
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
-  const origins = config.get<string[]>('corsOrigin') ?? ['http://localhost:8080'];
+  const origins = config.get<string[]>('corsOrigin') ?? [
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+  ];
   app.enableCors({
     origin: origins,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],

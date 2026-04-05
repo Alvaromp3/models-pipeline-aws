@@ -33,7 +33,10 @@ export default () => ({
   /** Origen del SPA en desarrollo; debe coincidir con Callback URL en Cognito. */
   corsOrigin: process.env.CORS_ORIGIN?.split(',')
     .map((s) => s.trim())
-    .filter(Boolean) ?? ['http://localhost:8080'],
+    .filter(Boolean) ?? [
+      'http://localhost:8080',
+      'http://127.0.0.1:8080',
+    ],
   cognito: {
     /** El claim `iss` del id_token usa la capitalización exacta del pool; `COGNITO_ISSUER` completo tiene prioridad. */
     userPoolId:

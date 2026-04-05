@@ -127,6 +127,7 @@
             "host": "localhost",
             "proxyConfig": "proxy.conf.json",
             "port": 8080,
+            "poll": 2000,
             "buildTarget": "frontend:build:development"
           },
           "configurations": {
