@@ -1,0 +1,259 @@
+<div class="exec-hero">
+  <div class="exec-hero__grid" aria-hidden="true"></div>
+  <div class="exec-hero__inner">
+    <p class="exec-hero__kicker">Predictive engine · NovaRetail</p>
+    <h1 class="exec-hero__title">Decision laboratory</h1>
+    <p class="exec-hero__lede">
+      Run scenarios on the same feature schema used in training, monitor artifact health (local / S3), and
+      keep targets, dictionary, and model outputs aligned for executive review.
+    </p>
+  </div>
+</div>
+
+<nav class="exec-tabs" aria-label="Predictions sections">
+  <button
+    type="button"
+    class="exec-tab"
+    [class.exec-tab--active]="activeTab === 'console'"
+    (click)="setTab('console')"
+  >
+    Model console
+  </button>
+  <button
+    type="button"
+    class="exec-tab"
+    [class.exec-tab--active]="activeTab === 'dataset'"
+    (click)="setTab('dataset')"
+  >
+    Data dictionary
+  </button>
+  <button
+    type="button"
+    class="exec-tab"
+    [class.exec-tab--active]="activeTab === 'targets'"
+    (click)="setTab('targets')"
+  >
+    Target variables
+  </button>
+</nav>
+
+@if (activeTab === 'console') {
+  <div class="tab-panel">
+    @if (loadingHealth) {
+      <p class="health-loading">Probing ML service…</p>
+    } @else if (mlHealthError) {
+      <p class="health-err">{{ mlHealthError }}</p>
+      <button type="button" class="btn ghost sm" (click)="refreshMlHealth()">Retry</button>
+    } @else if (mlHealth) {
+      <div class="status-strip">
+        <div class="status-strip-top">
+          @if (mlEnginesActive()) {
+            <span class="status-led-wrap">
+              <span class="status-led" aria-hidden="true"></span>
+              <span class="status-led-label">Active</span>
+            </span>
+          } @else {
+            <span class="status-led-wrap status-led-wrap--idle">
+              <span class="status-led status-led--idle" aria-hidden="true"></span>
+              <span class="status-led-label">Stub / idle</span>
+            </span>
+          }
+          <button type="button" class="btn ghost sm" (click)="refreshMlHealth()">Refresh</button>
+        </div>
+        <div class="status-strip-main">
+          <span class="status-label">ML engine status</span>
+          <span class="status-value">{{ modelStatusLine() }}</span>
+          @if (modelSourcesLine()) {
+            <span class="status-meta">{{ modelSourcesLine() }}</span>
+          }
+        </div>
+        @if (s3ModelsLine()) {
+          <p class="status-s3">{{ s3ModelsLine() }}</p>
+        }
+      </div>
+    }
+
+    <section class="card feature-card exec-card">
+      <header>
+        <h2>Feature payload</h2>
+        <p class="sub">
+          Monospace JSON row aligned to your training Parquet. Region and SKU merge on each run.
+        </p>
+      </header>
+      @if (featureJsonError) {
+        <p class="err">{{ featureJsonError }}</p>
+      }
+      <textarea
+        class="feature-json"
+        name="featureJson"
+        rows="12"
+        spellcheck="false"
+        [(ngModel)]="featureJsonText"
+      ></textarea>
+      <button type="button" class="btn ghost" (click)="resetFeatureJson()">Restore template</button>
+    </section>
+
+    <div class="grid">
+      <article class="card exec-card exec-card--accent">
+        <header>
+          <span class="card-badge">Regression</span>
+          <h2>Forecast revenue</h2>
+          <p class="sub">Endpoint <code>POST /predict/revenue</code></p>
+        </header>
+        <div class="fields">
+          <label>
+            Region
+            <input type="text" [(ngModel)]="region" name="region" />
+          </label>
+          <label>
+            SKU (<code>sku_id</code>)
+            <input type="text" [(ngModel)]="skuRevenue" name="skuRevenue" />
+          </label>
+        </div>
+        <button type="button" class="btn primary" (click)="runRevenue()" [disabled]="loadingRev">
+          {{ loadingRev ? 'Running…' : 'Run scenario' }}
+        </button>
+        @if (errorRev) {
+          <p class="err">{{ errorRev }}</p>
+        }
+        @if (resultRev) {
+          <div class="out exec-out">
+            <span class="out-label">Structured output</span>
+            <div class="json-snippet json-snippet--block" [innerHTML]="resultRev | jsonHighlight"></div>
+          </div>
+        }
+      </article>
+
+      <article class="card exec-card exec-card--violet">
+        <header>
+          <span class="card-badge card-badge--violet">Classification</span>
+          <h2>Stock-out risk</h2>
+          <p class="sub">Endpoint <code>POST /predict/stockout-risk</code></p>
+        </header>
+        <div class="fields">
+          <label>
+            SKU (<code>sku_id</code>)
+            <input type="text" [(ngModel)]="skuStock" name="skuStock" />
+          </label>
+        </div>
+        <button type="button" class="btn secondary" (click)="runStockout()" [disabled]="loadingStock">
+          {{ loadingStock ? 'Scoring…' : 'Evaluate risk' }}
+        </button>
+        @if (errorStock) {
+          <p class="err">{{ errorStock }}</p>
+        }
+        @if (resultStock) {
+          <div class="out exec-out">
+            <span class="out-label">Structured output</span>
+            <div class="json-snippet json-snippet--block" [innerHTML]="resultStock | jsonHighlight"></div>
+          </div>
+        }
+      </article>
+    </div>
+  </div>
+}
+
+@if (activeTab === 'dataset') {
+  <div class="tab-panel">
+    <section class="card table-card exec-card">
+      <header>
+        <h2>Training dataset (clean)</h2>
+        <p class="sub">
+          Dense retail feature reference — types mirror Snappy Parquet after ETL; names must match the
+          serialized <code>joblib</code> pipeline.
+        </p>
+      </header>
+      <div class="table-wrap exec-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of trainingColumns; track row.name) {
+              <tr>
+                <td><code>{{ row.name }}</code></td>
+                <td>
+                  <span [class]="typeBadgeClass(row.type)">{{ row.type }}</span>
+                </td>
+                <td>{{ row.description }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+}
+
+@if (activeTab === 'targets') {
+  <div class="tab-panel">
+    <section class="card exec-card prose-block">
+      <header>
+        <h2>Training targets</h2>
+        <p class="sub">
+          Magnitudes the models learn to predict or classify. Clear definitions reduce misinterpretation in
+          committees and sign-off flows.
+        </p>
+      </header>
+      <div class="table-wrap exec-table-wrap">
+        <table class="data-table data-table--targets">
+          <thead>
+            <tr>
+              <th>Target</th>
+              <th>Model</th>
+              <th>Definition</th>
+              <th>Business value</th>
+              <th>Decisions enabled</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of targetDocs; track row.column) {
+              <tr>
+                <td><code class="code-strong">{{ row.column }}</code></td>
+                <td class="td-model">{{ row.model }}</td>
+                <td>{{ row.definition }}</td>
+                <td>{{ row.businessValue }}</td>
+                <td>{{ row.decisions }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card exec-card prose-block">
+      <header>
+        <h2>API outputs (inference)</h2>
+        <p class="sub">
+          Common response keys after calling the ML service — use for dashboards and risk forums.
+        </p>
+      </header>
+      <div class="table-wrap exec-table-wrap">
+        <table class="data-table data-table--targets">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Model</th>
+              <th>Meaning</th>
+              <th>Business use</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of outputDocs; track row.field) {
+              <tr>
+                <td><code class="code-strong">{{ row.field }}</code></td>
+                <td class="td-model">{{ row.model }}</td>
+                <td>{{ row.meaning }}</td>
+                <td>{{ row.businessUse }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+}

@@ -1,0 +1,198 @@
+:root {
+  --nr-bg: #f4f7f9;
+  --nr-bg-elevated: #ffffff;
+  --nr-text: #0a0f1a;
+  --nr-text-secondary: #334155;
+  --nr-muted: #5b6475;
+  --nr-border: #d8dee6;
+  --nr-border-subtle: #e8ecf0;
+  --nr-corp-blue: #0047ab;
+  --nr-corp-blue-mid: #1a5fd4;
+  --nr-violet: #6f42c1;
+  --nr-violet-mid: #8b5cf6;
+  --nr-accent: var(--nr-corp-blue);
+  --nr-accent-bright: var(--nr-corp-blue-mid);
+  --nr-accent-soft: rgb(0 71 171 / 9%);
+  --nr-success: #047857;
+  --nr-success-soft: rgb(4 120 87 / 10%);
+  --nr-warning: #b45309;
+  --nr-danger: #b91c1c;
+  --nr-sidebar: #0a1120;
+  --nr-sidebar-2: #0d1526;
+  --nr-sidebar-border: rgb(255 255 255 / 7%);
+  --nr-shadow-sm: 0 1px 2px rgb(10 17 32 / 5%);
+  --nr-shadow: 0 1px 3px rgb(10 17 32 / 6%), 0 10px 32px rgb(10 17 32 / 7%);
+  --nr-shadow-lg: 0 4px 12px rgb(10 17 32 / 5%), 0 22px 48px rgb(10 17 32 / 9%);
+  --nr-radius-sm: 8px;
+  --nr-radius: 12px;
+  --nr-radius-lg: 18px;
+  --nr-font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --nr-font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  font-family: var(--nr-font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--nr-text);
+  background-color: var(--nr-bg);
+  background-image:
+    linear-gradient(rgb(10 17 32 / 2.8%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(10 17 32 / 2.8%) 1px, transparent 1px),
+    linear-gradient(180deg, rgb(255 255 255 / 75%) 0%, transparent 45%),
+    radial-gradient(ellipse 100% 65% at 50% -28%, rgb(0 71 171 / 8%), transparent);
+  background-size:
+    56px 56px,
+    56px 56px,
+    auto,
+    auto;
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgb(0 71 171 / 16%);
+}
+
+:focus-visible {
+  outline: 2px solid var(--nr-corp-blue);
+  outline-offset: 2px;
+}
+
+a:focus-visible {
+  border-radius: 4px;
+}
+
+button:focus-visible {
+  border-radius: var(--nr-radius-sm);
+}
+
+/* JSON syntax highlight (historial / auditoría) */
+.jh {
+  font-family: ui-monospace, 'SF Mono', Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.jh-k {
+  color: #6f42c1;
+  font-weight: 600;
+}
+
+.jh-s {
+  color: #047857;
+}
+
+.jh-n {
+  color: #0047ab;
+  font-weight: 600;
+}
+
+.jh-w {
+  color: #b45309;
+  font-weight: 600;
+}
+
+/* JSON en fondo oscuro (dashboard / tablas) */
+.json-snippet .jh-k {
+  color: #c4b5fd;
+}
+
+.json-snippet .jh-s {
+  color: #86efac;
+}
+
+.json-snippet .jh-n {
+  color: #93c5fd;
+}
+
+.json-snippet .jh-w {
+  color: #fcd34d;
+}
+
+/* Hero compartido — command center */
+.exec-hero {
+  position: relative;
+  margin-bottom: 1.35rem;
+  padding: 1.5rem 1.65rem 1.65rem;
+  border-radius: var(--nr-radius-lg);
+  background: linear-gradient(128deg, #060a12 0%, #0a1120 38%, #0f1a32 100%);
+  border: 1px solid rgb(255 255 255 / 9%);
+  box-shadow:
+    0 4px 28px rgb(0 0 0 / 22%),
+    inset 0 1px 0 rgb(255 255 255 / 5%);
+  overflow: hidden;
+
+  &--compact {
+    margin-bottom: 1.5rem;
+    padding: 1.35rem 1.5rem 1.45rem;
+  }
+}
+
+.exec-hero__grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.34;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 4%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 4%) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 88% 78% at 50% 0%, black, transparent);
+  pointer-events: none;
+}
+
+.exec-hero__inner {
+  position: relative;
+  max-width: 62ch;
+}
+
+.exec-hero--compact .exec-hero__inner {
+  max-width: 58ch;
+}
+
+.exec-hero__kicker {
+  margin: 0 0 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(167 139 250 / 95%);
+}
+
+.exec-hero__title {
+  margin: 0 0 0.55rem;
+  font-family: var(--nr-font-display);
+  font-size: clamp(1.4rem, 2.7vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: #f8fafc;
+}
+
+.exec-hero__lede {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.62;
+  color: rgb(203 213 225 / 92%);
+  font-weight: 450;
+}
+
+.exec-hero--compact .exec-hero__title {
+  font-size: clamp(1.32rem, 2.5vw, 1.72rem);
+}
+
+.exec-hero--compact .exec-hero__lede {
+  font-size: 0.86rem;
+}

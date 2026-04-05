@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"POSTGRES_PASSWORD\\\\|AWS_ACCESS_KEY\\\\|COGNITO\" /Users/alvaromartin-pena/Desktop/aws_project_pipeline/.env*)"
+    ]
+  }
+}

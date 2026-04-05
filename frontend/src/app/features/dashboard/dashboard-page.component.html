@@ -1,0 +1,78 @@
+<div class="exec-hero exec-hero--compact">
+  <div class="exec-hero__grid" aria-hidden="true"></div>
+  <div class="exec-hero__inner">
+    <p class="exec-hero__kicker">Command overview</p>
+    <h1 class="exec-hero__title">Executive decision summary</h1>
+    <p class="exec-hero__lede">
+      Live KPIs and the latest inference runs persisted to your warehouse — a single pane for leadership
+      review before operational commits.
+    </p>
+  </div>
+</div>
+
+@if (loading) {
+  <div class="skeleton-grid" aria-busy="true" aria-label="Loading dashboard">
+    <div class="sk sk-kpi"></div>
+    <div class="sk sk-kpi"></div>
+    <div class="sk sk-kpi"></div>
+    <div class="sk sk-panel"></div>
+  </div>
+} @else if (error) {
+  <div class="state err">{{ error }}</div>
+  <button type="button" class="btn" (click)="load()">Retry</button>
+} @else if (summary) {
+  <section class="kpis">
+    <article class="kpi">
+      <span class="kpi-label">Total predictions</span>
+      <span class="kpi-value">{{ summary.kpis.totalPredictions }}</span>
+      <span class="kpi-hint">vs. LY accumulated · enterprise scope</span>
+    </article>
+    <article class="kpi accent">
+      <span class="kpi-label">Revenue model runs</span>
+      <span class="kpi-value">{{ summary.kpis.revenueRuns }}</span>
+      <span class="kpi-hint">Forecast &amp; planning signal</span>
+    </article>
+    <article class="kpi accent2">
+      <span class="kpi-label">Stock-out evaluations</span>
+      <span class="kpi-value">{{ summary.kpis.stockoutRuns }}</span>
+      <span class="kpi-hint">Supply risk surface</span>
+    </article>
+  </section>
+
+  <section class="panel exec-panel">
+    <div class="panel-head">
+      <h2>Recent activity</h2>
+      <span class="hint">Newest first · full payload trace</span>
+    </div>
+    @if (summary.recentActivity.length === 0) {
+      <p class="empty">
+        No runs yet. Open <strong>Predictions</strong> to execute models and populate this feed.
+      </p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Analysis type</th>
+              <th>Result payload</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of summary.recentActivity; track row.id) {
+              <tr>
+                <td class="mono">{{ row.createdAt | date: 'medium' }}</td>
+                <td>
+                  <span class="pill" [class]="pillClass(row.kind)">{{ formatKind(row.kind) }}</span>
+                </td>
+                <td class="preview">
+                  <div class="json-snippet" [innerHTML]="row.responsePayload | jsonHighlight"></div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

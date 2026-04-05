@@ -1,0 +1,63 @@
+<div class="exec-hero exec-hero--compact">
+  <div class="exec-hero__grid" aria-hidden="true"></div>
+  <div class="exec-hero__inner">
+    <p class="exec-hero__kicker">Audit trail</p>
+    <h1 class="exec-hero__title">Inference history</h1>
+    <p class="exec-hero__lede">
+      Immutable request/response pairs per user — supports compliance reviews, model governance, and
+      post-hoc investigation of materially relevant calls.
+    </p>
+  </div>
+</div>
+
+@if (loading) {
+  <div class="state">Loading…</div>
+} @else if (error) {
+  <div class="state err">{{ error }}</div>
+  <button type="button" class="btn" (click)="load()">Retry</button>
+} @else {
+  <div class="toolbar">
+    <span class="range">{{ pageLabel }}</span>
+    <div class="pager">
+      <button type="button" (click)="prev()" [disabled]="offset === 0">Previous</button>
+      <button
+        type="button"
+        (click)="next()"
+        [disabled]="offset + pageSize >= total"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+
+  @if (items.length === 0) {
+    <p class="empty">No stored predictions yet.</p>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Type</th>
+            <th>Request</th>
+            <th>Response</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of items; track row.id) {
+            <tr>
+              <td class="mono">{{ row.createdAt | date: 'medium' }}</td>
+              <td><span [class]="pillClass(row.kind)">{{ formatKind(row.kind) }}</span></td>
+              <td>
+                <div class="json-snippet json-snippet--cell" [innerHTML]="row.requestPayload | jsonHighlight"></div>
+              </td>
+              <td>
+                <div class="json-snippet json-snippet--cell" [innerHTML]="row.responsePayload | jsonHighlight"></div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}

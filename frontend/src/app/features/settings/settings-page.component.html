@@ -1,0 +1,36 @@
+<div class="exec-hero exec-hero--compact">
+  <div class="exec-hero__grid" aria-hidden="true"></div>
+  <div class="exec-hero__inner">
+    <p class="exec-hero__kicker">Account</p>
+    <h1 class="exec-hero__title">Profile &amp; access governance</h1>
+    <p class="exec-hero__lede">
+      Identity is brokered through Cognito. Fields below mirror the corporate API and support access
+      certification workflows.
+    </p>
+  </div>
+</div>
+
+@if (loading) {
+  <div class="state">Loading…</div>
+} @else if (error) {
+  <div class="state err">{{ error }}</div>
+} @else if (profile) {
+  <div class="card">
+    <div class="row">
+      <span class="label">Name</span>
+      <span class="value">{{ profile.displayName }}</span>
+    </div>
+    <div class="row">
+      <span class="label">Email</span>
+      <span class="value mono">{{ profile.email }}</span>
+    </div>
+    <div class="row">
+      <span class="label">Role</span>
+      <span class="value role-pill">{{ accessRole }}</span>
+    </div>
+    <div class="row">
+      <span class="label">Principal ID</span>
+      <span class="value mono small">{{ profile.id }}</span>
+    </div>
+  </div>
+}

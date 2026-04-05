@@ -1,0 +1,62 @@
+<div class="shell">
+  <aside class="sidebar" aria-label="Main navigation">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">N</span>
+      <div class="brand-text">
+        <span class="name">NovaRetail</span>
+        <span class="tag">Business Intelligence</span>
+      </div>
+    </div>
+
+    <p class="nav-section-label">Workspace</p>
+    <nav class="nav">
+      @for (item of nav; track item.path) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <app-nav-icon [name]="item.icon" />
+          <span class="nav-label">{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-foot">
+      <button type="button" class="btn-logout" (click)="logout()">
+        <svg class="logout-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M18 9l3 3m0 0l-3 3m3-3H9" />
+        </svg>
+        <span>Log out</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-wrap">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="topbar-left">
+          @if (!production) {
+            <span class="pill-env">Local environment</span>
+          }
+          <span class="topbar-tagline">Data for materially relevant decisions</span>
+        </div>
+        <div class="topbar-right">
+          @if (profile) {
+            <div class="user-block">
+              <div class="user-avatar" aria-hidden="true">{{ userInitials }}</div>
+              <div class="user-text">
+                <span class="user-name">{{ profile.displayName }}</span>
+                <span class="user-email">{{ profile.email }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <router-outlet />
+    </main>
+  </div>
+</div>

@@ -1,0 +1,137 @@
+.state {
+  padding: 1rem;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--nr-border);
+
+  &.err {
+    color: #b91c1c;
+    background: #fef2f2;
+  }
+}
+
+.btn {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--nr-radius-sm);
+  border: none;
+  background: linear-gradient(135deg, #0047ab, #1a5fd4);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgb(0 71 171 / 26%);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--nr-muted);
+}
+
+.pager {
+  display: flex;
+  gap: 0.5rem;
+
+  button {
+    padding: 0.4rem 0.85rem;
+    border-radius: 8px;
+    border: 1px solid var(--nr-border);
+    background: #fff;
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    &:not(:disabled):hover {
+      border-color: #cbd5e1;
+    }
+  }
+}
+
+.empty {
+  color: var(--nr-muted);
+}
+
+.table-wrap {
+  overflow: auto;
+  background: var(--nr-bg-elevated);
+  border: 1px solid var(--nr-border-subtle);
+  border-radius: var(--nr-radius-lg);
+  box-shadow: var(--nr-shadow-lg);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+th,
+td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+}
+
+th {
+  text-align: left;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--nr-muted);
+}
+
+.mono {
+  white-space: nowrap;
+  color: #475569;
+}
+
+.pill {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  &--corp {
+    color: #0047ab;
+    background: rgb(0 71 171 / 10%);
+    border: 1px solid rgb(0 71 171 / 22%);
+  }
+
+  &--violet {
+    color: #6f42c1;
+    background: rgb(111 66 193 / 12%);
+    border: 1px solid rgb(111 66 193 / 24%);
+  }
+
+  &--neutral {
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+  }
+}
+
+.json-snippet--cell {
+  display: block;
+  max-width: 320px;
+  max-height: 5.5rem;
+  overflow: auto;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: #0c1117;
+  border: 1px solid rgb(255 255 255 / 8%);
+  font-size: 0.68rem;
+  line-height: 1.42;
+}

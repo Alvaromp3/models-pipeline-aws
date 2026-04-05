@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: novaretail
+      POSTGRES_PASSWORD: novaretail_dev
+      POSTGRES_DB: novaretail
+    ports:
+      - "5432:5432"
+    volumes:
+      - novaretail_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U novaretail -d novaretail"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
+
+volumes:
+  novaretail_pg:

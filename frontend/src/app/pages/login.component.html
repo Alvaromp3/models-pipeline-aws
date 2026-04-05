@@ -1,0 +1,132 @@
+<div class="login-shell">
+  <aside class="brand" aria-hidden="true">
+    <div class="brand-inner">
+      <div class="brand-mark">NR</div>
+      <h2 class="brand-title">NovaRetail</h2>
+      <p class="brand-tagline">
+        Inteligencia operativa y predicción para equipos de retail que necesitan decisiones
+        rápidas, seguras y alineadas con su negocio.
+      </p>
+      <ul class="brand-points">
+        <li>Acceso centralizado y trazable</li>
+        <li>Autenticación gestionada por AWS</li>
+        <li>Cumplimiento y control corporativo</li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="panel">
+    <div class="panel-card">
+      <header class="panel-head">
+        <p class="eyebrow">Acceso corporativo</p>
+        <h1 class="panel-title">Iniciar sesión</h1>
+        <p class="panel-lead">
+          Utilice el inicio de sesión único de su organización. Será redirigido de forma segura a
+          Amazon Cognito para validar sus credenciales.
+        </p>
+      </header>
+
+      @if (loading) {
+        <div class="loading-row" role="status">
+          <span class="loading-dot" aria-hidden="true"></span>
+          <span>Comprobando configuración del entorno…</span>
+        </div>
+      } @else if (hasCognito) {
+        @if (usedEnvFallback && apiUnreachable) {
+          <div class="banner banner-info" role="status">
+            Sin conexión al API: se usan credenciales de desarrollo del front. Tras Cognito, el
+            backend debe estar en marcha para completar el acceso.
+          </div>
+        } @else if (usedEnvFallback && !apiUnreachable) {
+          <div class="banner banner-info" role="status">
+            Configuración parcial desde el API; se completan datos del entorno de desarrollo.
+          </div>
+        }
+
+        <button type="button" class="btn-sso" (click)="startCognito()">
+          <span class="btn-sso-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M6.5 5.5h11v13h-11v-13z"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linejoin="round"
+              />
+              <path d="M9 8.5h6M9 12h4.5M9 15.5h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span class="btn-sso-text">
+            <span class="btn-sso-label">Continuar con SSO</span>
+            <span class="btn-sso-sub">Amazon Cognito · Hosted UI</span>
+          </span>
+        </button>
+
+        <p class="legal-hint">
+          Al continuar, acepta las políticas de acceso de su organización. La sesión queda sujeta a
+          las condiciones de su directorio de identidad.
+        </p>
+
+        <details class="tech-details">
+          <summary>Detalles técnicos (desarrollo)</summary>
+          <div class="tech-body">
+            <p>
+              El cliente obtiene la configuración pública mediante
+              <code>GET /api/auth/cognito/config</code> en el API Nest (puerto 4000 por defecto).
+            </p>
+            <p>
+              <strong>Callback URL</strong> registrada en Cognito debe coincidir con:
+              <code class="break">{{ callbackHint }}</code>
+            </p>
+          </div>
+        </details>
+      } @else if (backendMissingCognitoVars) {
+        <div class="banner banner-warn" role="alert">
+          <p class="banner-title">Cognito no está configurado en el API</p>
+          <p>
+            Añada en <code>backend/.env</code> (sin comillas ni espacios sobrantes):
+          </p>
+          <ul>
+            <li><code>COGNITO_DOMAIN</code> — host, p. ej. <code>xxxxx.auth.eu-west-1.amazoncognito.com</code></li>
+            <li><code>COGNITO_CLIENT_ID</code></li>
+            <li><code>COGNITO_USER_POOL_ID</code></li>
+            <li>
+              <code>COGNITO_REDIRECT_URI</code> — <strong>obligatorio</strong>; igual que «Callback URL» en
+              Cognito (en desarrollo: <code>http://localhost:8080/auth/callback</code>).
+            </li>
+          </ul>
+          <p>
+            Reinicie el API y verifique:
+            <code>curl -s http://localhost:4000/api/auth/cognito/config</code>
+          </p>
+          <p>
+            Callback en AWS:
+            <code class="break">{{ callbackHint }}</code>
+          </p>
+        </div>
+      } @else {
+        <div class="banner banner-warn" role="alert">
+          <p class="banner-title">No se pudo cargar la configuración de acceso</p>
+          <ol class="steps">
+            <li>Arranque el API en el puerto <strong>4000</strong> (<code>make run-backend</code> o <code>npm run start:dev</code> en <code>backend/</code>).</li>
+            <li>En desarrollo el front llama a <code>/api</code> en el mismo origen (p. ej. :8080); el proxy reenvía a :4000. Tras arrancar el API, recargue la página.</li>
+            <li>Compruebe <code>curl -s http://localhost:4000/api/health</code>.</li>
+            <li>Complete las variables Cognito en <code>backend/.env</code>.</li>
+            <li>
+              Opcional (API caído): en <code>environment.development.ts</code> defina
+              <code>cognitoDomain</code>, <code>cognitoClientId</code> y
+              <code>cognitoRedirectUri</code> (mismo valor que <code>COGNITO_REDIRECT_URI</code>).
+            </li>
+          </ol>
+          <p>
+            Callback OAuth en Cognito:
+            <code class="break">{{ callbackHint }}</code>
+          </p>
+        </div>
+      }
+    </div>
+
+    <p class="panel-foot">
+      ¿Problemas para entrar? Contacte con el administrador de identidad de su empresa.
+    </p>
+  </main>
+</div>

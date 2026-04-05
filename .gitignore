@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+.run/
+*.log
+.DS_Store
+
+node_modules/
+backend/dist/
+frontend/dist/
+frontend/.angular/
+ml-service/.venv/
+ml-service/models_local/*.joblib
+**/* 2.ts
+**/* 2.tsx

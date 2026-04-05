@@ -1,0 +1,61 @@
+<div class="exec-hero exec-hero--compact">
+  <div class="exec-hero__grid" aria-hidden="true"></div>
+  <div class="exec-hero__inner">
+    <p class="exec-hero__kicker">Time series</p>
+    <h1 class="exec-hero__title">Prediction volume</h1>
+    <p class="exec-hero__lede">
+      Daily run-rate of ML invocations — use for adoption tracking, surge detection, and capacity planning
+      alongside upstream pipelines.
+    </p>
+  </div>
+</div>
+
+@if (loading) {
+  <div class="state">Loading…</div>
+} @else if (error) {
+  <div class="state err">{{ error }}</div>
+  <button type="button" class="btn" (click)="load()">Retry</button>
+} @else {
+  <div class="meta-strip">
+    <span class="meta-strip__label">Calculation base</span>
+    <span class="meta-strip__value"
+      ><strong>{{ sampleSize }}</strong> predictions in the aggregate window</span
+    >
+  </div>
+
+  @if (data.length === 0) {
+    <p class="empty">No data yet. Execute models under Predictions to populate the series.</p>
+  } @else {
+    <div class="chart-card">
+      <div class="chart-head">
+        <span class="chart-title">Daily inference volume</span>
+        <span class="chart-sub">Normalized to window maximum</span>
+      </div>
+      <div class="chart-body">
+        <div class="y-axis" aria-hidden="true">
+          @for (t of yTicks; track t) {
+            <span class="y-tick">{{ t }}</span>
+          }
+        </div>
+        <div class="chart-plot">
+          <div class="grid-lines" aria-hidden="true">
+            @for (_ of yTicks; track $index) {
+              <div class="grid-line"></div>
+            }
+          </div>
+          <div class="chart" role="img" aria-label="Volume by day">
+            @for (row of data; track $index) {
+              <div class="bar-col">
+                <span class="bar-value">{{ row.count }}</span>
+                <div class="bar-wrap">
+                  <div class="bar" [style.height]="barHeight(row.count)"></div>
+                </div>
+                <span class="date">{{ row.date }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+}
