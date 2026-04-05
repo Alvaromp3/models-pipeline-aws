@@ -115,11 +115,11 @@ run-backend: $(RUN_DIR)
 	@echo "[make] API pid $$(cat $(RUN_DIR)/backend.pid) → $(RUN_DIR)/backend.log"
 	@"$(WAIT_HTTP)" "http://127.0.0.1:$(BACKEND_PORT)/api/health" "Nest API" 120 1 5 || (tail -40 $(RUN_DIR)/backend.log; exit 1)
 
+# ng serve con --host 0.0.0.0 escucha IPv4; evita fallos de curl a 127.0.0.1 si solo quedaba en ::1 (macOS).
 run-frontend: $(RUN_DIR)
 	@if lsof -ti :$(FRONTEND_PORT) >/dev/null 2>&1; then echo "[make] Puerto $(FRONTEND_PORT) ocupado"; exit 1; fi
 	@test -f "$(NG)" || (echo "[make] cd frontend && npm install"; exit 1)
 	@echo "---- $$(date '+%Y-%m-%d %H:%M:%S') Angular :$(FRONTEND_PORT) ----" >> $(RUN_DIR)/frontend.log
-# --host 0.0.0.0: escucha en IPv4; evita que solo quede en ::1 y falle curl a 127.0.0.1 (típico en macOS + localhost).
 	@cd "$(ROOT)/frontend" && NG_CLI_ANALYTICS=false BROWSER=none nohup "$(NODE)" "$(NG)" serve --host 0.0.0.0 --port $(FRONTEND_PORT) \
 		>> "$(RUN_DIR)/frontend.log" 2>&1 & echo $$! > $(RUN_DIR)/frontend.pid
 	@echo "[make] Front pid $$(cat $(RUN_DIR)/frontend.pid) → $(RUN_DIR)/frontend.log"
